@@ -2,13 +2,15 @@ spring:
   cloud:
     aws:
       region:
-        static: eu-north-1  # Your AWS region
+        static: eu-north-1
       sqs:
-        queue-name: s3-events-queue  # Your SQS queue name
-
-
+        queue-name: s3-events-queue
   output:
     ansi:
       enabled: always
 sqs:
   queue-name: s3-events-queue
+
+  batch:
+    job:
+      enabled: false
