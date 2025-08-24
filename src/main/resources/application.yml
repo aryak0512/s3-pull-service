@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    aws:
+      region:
+        static: eu-north-1  # Your AWS region
+      sqs:
+        queue-name: s3-events-queue  # Your SQS queue name
+
+
+  output:
+    ansi:
+      enabled: always
+sqs:
+  queue-name: s3-events-queue
