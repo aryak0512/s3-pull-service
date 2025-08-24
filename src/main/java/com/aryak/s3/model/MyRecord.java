@@ -2,21 +2,24 @@ package com.aryak.s3.model;
 
 public class MyRecord {
 
-    private Integer id;
+    private String id;
     private String name;
     private String city;
 
-    public MyRecord(Integer id, String name, String city) {
+    public MyRecord() {
+    }
+
+    public MyRecord(String id, String name, String city) {
         this.id = id;
         this.name = name;
         this.city = city;
     }
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 

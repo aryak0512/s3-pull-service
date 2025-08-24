@@ -14,13 +14,14 @@ import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.transaction.PlatformTransactionManager;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+
+import java.io.IOException;
 
 @Configuration
 public class JobConfig {
@@ -54,17 +55,25 @@ public class JobConfig {
     @StepScope
     public FlatFileItemReader<MyRecord> reader(
             @Value("#{jobParameters['bucket']}") String bucket,
-            @Value("#{jobParameters['key']}") String key) {
+            @Value("#{jobParameters['key']}") String key) throws IOException {
+
+        log.info("Reader Bucket : {} and key : {}", bucket, key);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
                 .build();
 
-        ResponseInputStream<GetObjectResponse> s3Object = s3Client.getObject(getObjectRequest);
+        // Get only the raw InputStream of file content
+        ResponseInputStream<GetObjectResponse> responseStream =
+                s3Client.getObject(getObjectRequest, ResponseTransformer.toInputStream());
+
+        // To make it restartable, copy into memory (or temp file)
+        byte[] fileBytes = responseStream.readAllBytes();
+
         return new FlatFileItemReaderBuilder<MyRecord>()
                 .name("s3FileReader")
-                .resource(new InputStreamResource(s3Client.getObject(getObjectRequest, ResponseTransformer.toInputStream())))
+                .resource(new org.springframework.core.io.ByteArrayResource(fileBytes))
                 .delimited()
                 .names("id", "name", "city")
                 .targetType(MyRecord.class)
