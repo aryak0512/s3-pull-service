@@ -1,9 +1,7 @@
 package com.aryak.s3.listeners;
 
-import io.awspring.cloud.sqs.annotation.SqsListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -21,20 +19,16 @@ public class S3FileListener {
     private static final Logger log = LoggerFactory.getLogger(S3FileListener.class);
 
     private final JobLauncher jobLauncher;
-
-    private final Job firstJob;
-
-    private final Job secondJob;
+    //private final Job job;
 
     private final Set<String> processedFiles = new HashSet<>();
 
-    public S3FileListener(JobLauncher jobLauncher, Job firstJob, Job secondJob) {
+    public S3FileListener(JobLauncher jobLauncher) {
         this.jobLauncher = jobLauncher;
-        this.firstJob = firstJob;
-        this.secondJob = secondJob;
+        //this.job = job;
     }
 
-    @SqsListener("${sqs.queue-name}")
+    //@SqsListener("${sqs.queue-name}")
     public void handleS3Event(String messageJson) {
         try {
 
@@ -53,7 +47,10 @@ public class S3FileListener {
                 boolean duplicate = checkIfDuplicate(key);
 
                 log.info("Duplicate : {}", duplicate);
-                
+
+                // identify client from directory and get its metadata
+
+
                 if ( !duplicate ) {
 
                     log.info("New file detected in S3 bucket : {}, Key : {}", bucket, key);
@@ -63,7 +60,7 @@ public class S3FileListener {
                             //.addJobParameter("timestamp", System.currentTimeMillis(), Long.class)
                             .toJobParameters();
 
-                    jobLauncher.run(secondJob, parameters);
+                    //jobLauncher.run(job, parameters);
                 }
 
             }

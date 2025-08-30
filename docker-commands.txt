@@ -1,0 +1,10 @@
+docker run -d \
+  --name ftp-server \
+  -e USERS="user|pass" \
+  -e ADDRESS=127.0.0.1 \
+  -e MIN_PORT=21000 \
+  -e MAX_PORT=21010 \
+  -p 21:21 \
+  -p 21000-21010:21000-21010 \
+  -v $(pwd)/ftp-data:/home/user \
+  delfer/alpine-ftp-server

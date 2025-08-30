@@ -14,3 +14,10 @@ spring:
       enabled: false
 sqs:
   queue-name: s3-events-queue
+
+
+logging:
+  level:
+    org.springframework.integration: DEBUG
+    org.springframework.integration.ftp: DEBUG
+    org.apache.commons.net.ftp: DEBUG
