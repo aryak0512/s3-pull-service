@@ -85,6 +85,7 @@
             <version>2.25.28</version>
         </dependency>
 
+        <!-- FTP related spring integration -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-integration</artifactId>
@@ -93,6 +94,17 @@
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-ftp</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

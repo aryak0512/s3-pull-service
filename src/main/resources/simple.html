@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Processing Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .dashboard {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .progress-container {
+            margin: 30px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255,255,255,0.4),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border-left: 5px solid #48bb78;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #718096;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .percentage-display {
+            text-align: center;
+            font-size: 4em;
+            font-weight: bold;
+            color: #48bb78;
+            margin: 20px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #e53e3e;
+        }
+
+        .status-indicator.connected {
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <h1>Processing Dashboard</h1>
+
+    <div class="status-text">
+        <span class="status-indicator" id="statusDot"></span>
+        <span id="statusText">Ready to start</span>
+    </div>
+
+    <div class="percentage-display" id="percentageDisplay">0%</div>
+
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Filename</div>
+            <div class="stat-value" id="filename">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Lines Processed</div>
+            <div class="stat-value" id="linesProcessed">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Lines</div>
+            <div class="stat-value" id="totalLines">1,000</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Last Updated</div>
+            <div class="stat-value" id="lastUpdated">-</div>
+        </div>
+    </div>
+
+    <button id="startBtn" onclick="startStream()">Start Processing</button>
+</div>
+
+<script>
+    let eventSource = null;
+
+    function startStream() {
+        if (eventSource) return;
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('startBtn').textContent = 'Processing...';
+        updateStatus('Connecting...', false);
+
+        eventSource = new EventSource('http://localhost:8080/stream');
+
+        eventSource.onopen = function() {
+            updateStatus('Connected - Processing', true);
+        };
+
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            updateProgress(data);
+        };
+
+        eventSource.onerror = function() {
+            updateStatus('Connection error', false);
+            resetButton();
+        };
+    }
+
+    function updateProgress(data) {
+        const percentage = (data.linesProcessed / 1000) * 100;
+
+        // Update progress bar
+        document.getElementById('progressFill').style.width = percentage + '%';
+        document.getElementById('percentageDisplay').textContent = Math.round(percentage) + '%';
+
+        // Update stats
+        document.getElementById('filename').textContent = data.filename;
+        document.getElementById('linesProcessed').textContent = data.linesProcessed.toLocaleString();
+        document.getElementById('lastUpdated').textContent = new Date(data.currentTime).toLocaleTimeString();
+
+        // Check if completed
+        if (data.linesProcessed >= 1000) {
+            updateStatus('Processing Complete!', true);
+            resetButton();
+            eventSource.close();
+            eventSource = null;
+        }
+    }
+
+    function updateStatus(text, connected) {
+        document.getElementById('statusText').textContent = text;
+        const dot = document.getElementById('statusDot');
+        if (connected) {
+            dot.classList.add('connected');
+        } else {
+            dot.classList.remove('connected');
+        }
+    }
+
+    function resetButton() {
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').textContent = 'Start Processing';
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (eventSource) {
+            eventSource.close();
+        }
+    });
+</script>
+</body>
+</html>
